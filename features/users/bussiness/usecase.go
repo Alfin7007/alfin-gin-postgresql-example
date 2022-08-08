@@ -2,9 +2,10 @@ package bussiness
 
 import (
 	"errors"
-	"fmt"
 	"myexample/go-gin/features/users"
 	"myexample/go-gin/middlewares"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userUserCase struct {
@@ -17,21 +18,31 @@ func NewUserBussiness(userData users.Data) users.Bussiness {
 	}
 }
 
-func (uc userUserCase) Login(userCore users.Core) (token string, err error) {
-	result, errLogin := uc.userData.Login(userCore.Email)
+func (uc userUserCase) Login(userCore users.Core) (id int, token string, err error) {
+	result, errLogin := uc.userData.FindUser(userCore.Email)
 	if errLogin != nil {
-		return "", errLogin
+		return 0, "", errLogin
 	}
-	if result.Password != userCore.Password {
-		return "", errors.New("wrong password")
+	passCompare := bcrypt.CompareHashAndPassword([]byte(result.Password), []byte(userCore.Password))
+	if passCompare != nil {
+		return 0, "", errors.New("wrong password")
 	}
 
-	token, err = middlewares.GenerateToken(result.UserID)
-	fmt.Println(err)
-	return token, err
+	token, _ = middlewares.GenerateToken(result.UserID)
+	return result.UserID, token, err
 }
 
 func (uc userUserCase) Register(userCore users.Core) (err error) {
-	err = uc.userData.InsertData(userCore)
-	return err
+	_, userCheck := uc.userData.FindUser(userCore.Email)
+	if userCheck == nil {
+		return errors.New("email existing")
+	}
+	bytePass := []byte(userCore.Password)
+	hashPass, _ := bcrypt.GenerateFromPassword(bytePass, bcrypt.DefaultCost)
+	userCore.Password = string(hashPass)
+	errInsert := uc.userData.InsertData(userCore)
+	if errInsert != nil {
+		return errors.New("failed insert data")
+	}
+	return errors.New("success")
 }

@@ -9,10 +9,10 @@ type Core struct {
 
 type Data interface {
 	InsertData(Core) error
-	Login(Email string) (Core, error)
+	FindUser(Email string) (Core, error)
 }
 
 type Bussiness interface {
 	Register(Core) error
-	Login(Core) (token string, err error)
+	Login(Core) (id int, token string, err error)
 }

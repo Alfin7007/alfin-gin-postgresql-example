@@ -3,7 +3,7 @@ package presentation
 import (
 	"myexample/go-gin/features/users"
 	"myexample/go-gin/features/users/presentation/request"
-	"net/http"
+	"myexample/go-gin/helper"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,19 +22,19 @@ func (uh UserHandler) Login(c *gin.Context) {
 	userRequest := request.UserRequest{}
 	errBind := c.Bind(&userRequest)
 	if errBind != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "login fail => " + errBind.Error()})
+		c.JSON(helper.FailedBadRequest())
 		c.Abort()
 		return
 	}
 	userCore := request.ToCore(userRequest)
-	token, errLogin := uh.userBussiness.Login(userCore)
+	userID, token, errLogin := uh.userBussiness.Login(userCore)
 	if errLogin != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		c.JSON(helper.FailedNotFound())
 		c.Abort()
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": "success", "token": token})
+	c.IndentedJSON(helper.AuthOK(userID, token))
 }
 
 func (uh UserHandler) Register(c *gin.Context) {
@@ -42,7 +42,7 @@ func (uh UserHandler) Register(c *gin.Context) {
 
 	errBind := c.Bind(&userRequest)
 	if errBind != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "register fail => " + errBind.Error()})
+		c.IndentedJSON(helper.FailedBadRequest())
 		c.Abort()
 		return
 	}
@@ -50,7 +50,10 @@ func (uh UserHandler) Register(c *gin.Context) {
 	userCore := request.ToCore(userRequest)
 	err := uh.userBussiness.Register(userCore)
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "register fail => " + err.Error()})
+		c.IndentedJSON(helper.FailedBadRequestWithMSG(err.Error()))
+		c.Abort()
+		return
 	}
-	c.IndentedJSON(http.StatusCreated, gin.H{"message": "success"})
+
+	c.IndentedJSON(helper.SuccessCreateNoData())
 }
