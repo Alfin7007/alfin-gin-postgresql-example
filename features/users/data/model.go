@@ -13,6 +13,16 @@ type User struct {
 	Password string `json:"password"`
 }
 
+func (user User) ToCore() users.Core {
+	userCore := users.Core{
+		UserID:   int(user.ID),
+		Name:     user.Name,
+		Email:    user.Email,
+		Password: user.Password,
+	}
+	return userCore
+}
+
 func fromCore(userCore users.Core) User {
 	userModel := User{
 		Name:     userCore.Name,

@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"fmt"
 	"myexample/go-gin/features/users"
 
 	"gorm.io/gorm"
@@ -30,5 +31,13 @@ func (repo psqlUserRepo) InsertData(userCore users.Core) (err error) {
 }
 
 func (repo psqlUserRepo) Login(email string) (userCore users.Core, err error) {
+	userModel := User{}
+
+	result := repo.db.Where("email = ?", email).Find(&userModel)
+	if result.RowsAffected == 0 {
+		return userCore, errors.New("user not found")
+	}
+	fmt.Println(result.Error)
+	userCore = userModel.ToCore()
 	return userCore, err
 }

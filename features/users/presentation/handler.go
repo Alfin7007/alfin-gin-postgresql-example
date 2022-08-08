@@ -8,26 +8,43 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type userHandler struct {
+type UserHandler struct {
 	userBussiness users.Bussiness
 }
 
-func NewUserHandler(userBussiness users.Bussiness) *userHandler {
-	return &userHandler{
+func NewUserHandler(userBussiness users.Bussiness) *UserHandler {
+	return &UserHandler{
 		userBussiness: userBussiness,
 	}
 }
 
-func (uh userHandler) Login(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, gin.H{"message": "login"})
+func (uh UserHandler) Login(c *gin.Context) {
+	userRequest := request.UserRequest{}
+	errBind := c.Bind(&userRequest)
+	if errBind != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "login fail => " + errBind.Error()})
+		c.Abort()
+		return
+	}
+	userCore := request.ToCore(userRequest)
+	token, errLogin := uh.userBussiness.Login(userCore)
+	if errLogin != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		c.Abort()
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "success", "token": token})
 }
 
-func (uh userHandler) Register(c *gin.Context) {
+func (uh UserHandler) Register(c *gin.Context) {
 	userRequest := request.UserRequest{}
 
 	errBind := c.Bind(&userRequest)
 	if errBind != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "register fail => " + errBind.Error()})
+		c.Abort()
+		return
 	}
 
 	userCore := request.ToCore(userRequest)
