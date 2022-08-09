@@ -3,7 +3,9 @@ package presentation
 import (
 	"myexample/go-gin/features/users"
 	"myexample/go-gin/features/users/presentation/request"
+	"myexample/go-gin/features/users/presentation/response"
 	"myexample/go-gin/helper"
+	"myexample/go-gin/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +36,7 @@ func (uh UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(helper.AuthOK(userID, token))
+	c.JSON(helper.AuthOK(userID, token))
 }
 
 func (uh UserHandler) Register(c *gin.Context) {
@@ -50,10 +52,25 @@ func (uh UserHandler) Register(c *gin.Context) {
 	userCore := request.ToCore(userRequest)
 	err := uh.userBussiness.Register(userCore)
 	if err != nil {
-		c.IndentedJSON(helper.FailedBadRequestWithMSG(err.Error()))
+		c.JSON(helper.FailedBadRequestWithMSG(err.Error()))
 		c.Abort()
 		return
 	}
 
-	c.IndentedJSON(helper.SuccessCreateNoData())
+	c.JSON(helper.SuccessCreateNoData())
+}
+
+func (uh UserHandler) GetUser(c *gin.Context) {
+	userID, _, errJWT := middlewares.JWTTokenCheck(c)
+	if errJWT != nil {
+		c.JSON(helper.FailedBadRequestWithMSG("invalid or exp jwt"))
+		return
+	}
+	result, err := uh.userBussiness.GetData(userID)
+	if err != nil {
+		c.JSON(helper.FailedBadRequestWithMSG(err.Error()))
+		return
+	}
+
+	c.JSON(helper.SuccessGetData(response.FromCore(result)))
 }

@@ -17,7 +17,7 @@ func NewUserRepo(conn *gorm.DB) users.Data {
 	}
 }
 
-func (repo psqlUserRepo) InsertData(userCore users.Core) (err error) {
+func (repo psqlUserRepo) InsertUser(userCore users.Core) (err error) {
 	userModel := fromCore(userCore)
 	result := repo.db.Create(&userModel)
 	if result.Error != nil {
@@ -33,6 +33,18 @@ func (repo psqlUserRepo) FindUser(email string) (userCore users.Core, err error)
 	userModel := User{}
 
 	result := repo.db.Where("email = ?", email).Find(&userModel)
+	if result.RowsAffected == 0 {
+		return userCore, errors.New("user not found")
+	}
+
+	userCore = userModel.ToCore()
+	return userCore, nil
+}
+
+func (repo psqlUserRepo) SelectUser(id int) (userCore users.Core, err error) {
+	userModel := User{}
+
+	result := repo.db.Where("id = ?", id).Find(&userModel)
 	if result.RowsAffected == 0 {
 		return userCore, errors.New("user not found")
 	}

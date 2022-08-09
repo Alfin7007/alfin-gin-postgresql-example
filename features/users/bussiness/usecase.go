@@ -8,17 +8,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type userUserCase struct {
+type userUseCase struct {
 	userData users.Data
 }
 
 func NewUserBussiness(userData users.Data) users.Bussiness {
-	return &userUserCase{
+	return &userUseCase{
 		userData: userData,
 	}
 }
 
-func (uc userUserCase) Login(userCore users.Core) (id int, token string, err error) {
+func (uc userUseCase) Login(userCore users.Core) (id int, token string, err error) {
 	result, errLogin := uc.userData.FindUser(userCore.Email)
 	if errLogin != nil {
 		return 0, "", errLogin
@@ -28,11 +28,11 @@ func (uc userUserCase) Login(userCore users.Core) (id int, token string, err err
 		return 0, "", errors.New("wrong password")
 	}
 
-	token, _ = middlewares.GenerateToken(result.UserID)
-	return result.UserID, token, err
+	token, _ = middlewares.GenerateToken(result.UserID, result.Email)
+	return result.UserID, token, nil
 }
 
-func (uc userUserCase) Register(userCore users.Core) (err error) {
+func (uc userUseCase) Register(userCore users.Core) (err error) {
 	_, userCheck := uc.userData.FindUser(userCore.Email)
 	if userCheck == nil {
 		return errors.New("email existing")
@@ -40,9 +40,15 @@ func (uc userUserCase) Register(userCore users.Core) (err error) {
 	bytePass := []byte(userCore.Password)
 	hashPass, _ := bcrypt.GenerateFromPassword(bytePass, bcrypt.DefaultCost)
 	userCore.Password = string(hashPass)
-	errInsert := uc.userData.InsertData(userCore)
+	errInsert := uc.userData.InsertUser(userCore)
 	if errInsert != nil {
 		return errors.New("failed insert data")
 	}
-	return errors.New("success")
+	return nil
+}
+
+func (uc userUseCase) GetData(id int) (users.Core, error) {
+
+	userCore, nil := uc.userData.SelectUser(id)
+	return userCore, nil
 }

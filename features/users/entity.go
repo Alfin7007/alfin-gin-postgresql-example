@@ -8,11 +8,13 @@ type Core struct {
 }
 
 type Data interface {
-	InsertData(Core) error
+	InsertUser(Core) error
 	FindUser(Email string) (Core, error)
+	SelectUser(id int) (Core, error)
 }
 
 type Bussiness interface {
 	Register(Core) error
 	Login(Core) (id int, token string, err error)
+	GetData(id int) (Core, error)
 }
